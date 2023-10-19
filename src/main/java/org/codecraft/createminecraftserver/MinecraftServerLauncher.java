@@ -7,9 +7,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -263,18 +260,36 @@ public class MinecraftServerLauncher {
             try {
                 ProcessBuilder processBuilder = null;
                 String os = System.getProperty("os.name").toLowerCase();
-                if (os.contains("win")) {
-                    // For Windows
-                    processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd.exe", "/K", "java -jar " + jarFileName);
-                    processBuilder.directory(new File(System.getProperty("user.dir"))); // Set the working directory of your application
-                } else if (os.contains("mac")) {
-                    // For macOS
-                    processBuilder = new ProcessBuilder("osascript", "-e", "tell app \"Terminal\" to do script \"cd " + System.getProperty("user.dir") + " && java -jar " + jarFileName + "\"");
-                    processBuilder.directory(new File(System.getProperty("user.dir")));
-                } else if (os.contains("nix") || os.contains("nux") || os.contains("bsd")) {
-                    // For Linux/Unix
-                    processBuilder = new ProcessBuilder("x-terminal-emulator", "-e", "java", "-jar", "java -jar " + jarFileName);
-                    processBuilder.directory(new File(System.getProperty("user.dir"))); // Set the working directory of your application
+                boolean isExecutable = isExecutableExtension(os, getFileExtension(jarFileName));
+
+                if (isExecutable) {
+                    if (os.contains("win")) {
+                        // For Windows
+                        processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd.exe", "/K", "java -jar " + jarFileName);
+                    } else if (os.contains("mac")) {
+                        // For macOS
+                        processBuilder = new ProcessBuilder("osascript", "-e", "tell app \"Terminal\" to do script \"cd " + System.getProperty("user.dir") + " && java -jar " + jarFileName + "\"");
+                    } else if (os.contains("nix") || os.contains("nux") || os.contains("bsd")) {
+                        // For Linux/Unix
+                        processBuilder = new ProcessBuilder("x-terminal-emulator", "-e", "java", "-jar", jarFileName);
+                    } else {
+                        System.out.println("Unsupported operating system");
+                        return;
+                    }
+                } else {
+                    if (os.contains("win")) {
+                        // For Windows
+                        processBuilder = new ProcessBuilder("cmd", "/c", "start", "cmd.exe", "/K", "java -jar " + jarFileName);
+                    } else if (os.contains("mac")) {
+                        // For macOS
+                        processBuilder = new ProcessBuilder("osascript", "-e", "tell app \"Terminal\" to do script \"cd " + System.getProperty("user.dir") + " && java -jar " + jarFileName + "\"");
+                    } else if (os.contains("nix") || os.contains("nux") || os.contains("bsd")) {
+                        // For Linux/Unix
+                        processBuilder = new ProcessBuilder("x-terminal-emulator", "-e", "java", "-jar", jarFileName);
+                    } else {
+                        System.out.println("Unsupported operating system");
+                        return;
+                    }
                 }
 
                 if (processBuilder != null) {
@@ -287,8 +302,27 @@ public class MinecraftServerLauncher {
             }
         }
     }
+    private static String getFileExtension(String fileName) {
+        int dotIndex = fileName.lastIndexOf(".");
+        if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
+            return fileName.substring(dotIndex + 1);
+        }
+        return "";
+    }
 
-    private static void killFirstInstance() {
+    private static boolean isExecutableExtension(String os, String fileExtension) {
+        if (os.contains("win") && fileExtension.equals("exe")) {
+            return true;
+        } else if (os.contains("mac") && fileExtension.equals("app")) {
+            return true;
+        } else if ((os.contains("nix") || os.contains("nux") || os.contains("bsd"))) {
+            return false;
+        }
+
+        return false;
+    }
+
+        private static void killFirstInstance() {
         try {
             ProcessBuilder processBuilder = new ProcessBuilder("taskkill", "/IM", "java.exe", "/F");
             processBuilder.start();
